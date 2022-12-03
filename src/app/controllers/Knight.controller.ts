@@ -1,11 +1,11 @@
-
+import { Response, Request } from 'express';
 import { KnightModel } from '../models/Knight';
 import { RequestMarryModel } from '../models/RequestMarry';
 import { SaleKnightModel } from '../models/SaleKnight';
 const { ADDRESS_SMARTCONTRACT } = process.env;
 class KnightController {
     
-    async storeRequestMarry(req, res) {
+    async storeRequestMarry(req: Request, res: Response) {
         const {idKnightRequest, idKnightResponse, ownerRequest, ownerResponse, amountGift} = req.body;
         const newRequest = new RequestMarryModel({
             idKnightRequest, 
@@ -25,7 +25,7 @@ class KnightController {
         })
     }
     
-    async updateRequestMarry(req,res) {
+    async updateRequestMarry(req: Request, res: Response) {
         const {idKnightRequest, idKnightResponse } = req.body;
         RequestMarryModel.findOneAndUpdate({idKnightRequest, idKnightResponse}, {status: "Married"})
         .then((data)=> {
@@ -42,7 +42,7 @@ class KnightController {
         })
     }
 
-    async destroyMarry(req, res) {
+    async destroyMarry(req: Request, res: Response) {
         const {idKnightRequest, idKnightResponse } = req.query;
         RequestMarryModel.findOneAndDelete({idKnightRequest, idKnightResponse})
         .then((data)=> {
@@ -56,24 +56,28 @@ class KnightController {
         })
     }
 
-    async getRequestMarry(req, res) {
+    async getRequestMarry(req: Request, res: Response) {
         const { owner } = req.query;
-        console.log(req.query);
         try {
-            const listRequest = await RequestMarryModel.find({ $or: [{ ownerRequest: owner.toLowerCase() }, { ownerResponse: owner.toLowerCase()}]})
-            .populate("knightRequest knightResponse").sort({ createdAt: -1 })
-            if(listRequest)
-            {
-                res.status(200).json({success:true, data:listRequest });
+            if (owner && typeof owner === 'string') {
+                const listRequest = await RequestMarryModel.find({ $or: [
+                    { ownerRequest: owner.toLowerCase() }, 
+                    { ownerResponse: owner.toLowerCase()}
+                ]})
+                .populate("knightRequest knightResponse")
+                .sort({ createdAt: -1 })
+                if (listRequest) {
+                  return  res.status(200).json({success:true, data:listRequest });
+                }
             }
-
+            throw new Error('owner not found');
         } catch (error) {
             console.log(error);
             res.status(500).json({success: false});
         }
     }
 
-    async storeKnight(req, res) {
+    async storeKnight(req: Request, res: Response) {
         const { name, dna, knightID, level, attackTime, sexTime, owner, tokenURI} = req.body;
         const permaLinkBase = `https://testnets.opensea.io/assets/rinkeby/${ADDRESS_SMARTCONTRACT}/${knightID}`;
         const NewKnight  = new KnightModel({ 
@@ -101,20 +105,25 @@ class KnightController {
         .catch((error) => console.log(error));  
     }
 
-    async getKnightsOfOwner(req, res) {
+    async getKnightsOfOwner(req: Request, res: Response) {
         try {
-            // jobTransferNFT.start();
             const { owner } = req.query;
-            const knightsOfOwner = await KnightModel.find({owner: owner.toLowerCase()}).populate("saleKnight").sort({ createdAt: -1 }).limit(20);
-            if(knightsOfOwner){
-                res.status(200).json({success:true, data: knightsOfOwner});
+            if (owner && typeof owner === 'string') {
+                const knightsOfOwner = await KnightModel.find({ owner: owner.toLowerCase() })
+                .populate("saleKnight")
+                .sort({ createdAt: -1 })
+                .limit(20);
+                if(knightsOfOwner){
+                  return  res.status(200).json({success:true, data: knightsOfOwner});
+                }
             }
+            throw new Error('owner not found');
         } catch (error) {
             console.log(error);
             res.status(500).json({success: false});
         }
     }
-    async getKnightById(req,res){
+    async getKnightById(req: Request, res: Response){
         try {
             const { id } = req.query;
             const knightsOfOwner = await KnightModel.findOne({knightID: id})
@@ -127,20 +136,23 @@ class KnightController {
         }
     }
 
-    async getKnightNotOwner(req,res) {
+    async getKnightNotOwner(req: Request, res: Response) {
         try {
             const { owner } = req.query;
-            const knightsNotOwner = await KnightModel.find({owner: { $ne: owner.toLowerCase() }}).sort({ createdAt: -1 }).limit(20);
-            if(knightsNotOwner){
-                res.status(200).json({success:true, data: knightsNotOwner});
+            if (owner && typeof owner === 'string') {
+                const knightsNotOwner = await KnightModel.find({owner: { $ne: owner.toLowerCase() }}).sort({ createdAt: -1 }).limit(20);
+                if(knightsNotOwner){
+                    return  res.status(200).json({success:true, data: knightsNotOwner});
+                }
             }
+            throw new Error('owner not found');
         } catch (error) {
             console.log(error);
             res.status(500).json({success: false});
         }
     }
 
-    async storeSaleKnight(req, res) {
+    async storeSaleKnight(req: Request, res: Response) {
         const {knightID, price, bidID, timeEnd} = req.body;
         const NewSaleKnight  = new SaleKnightModel({ 
             knightID,
@@ -158,7 +170,7 @@ class KnightController {
         .catch((error) => console.log("Create sale kngiht false: ", error))
     }
 
-    async getSaleKnight(req, res) {
+    async getSaleKnight(req: Request, res: Response) {
         try {
             const now = Math.floor(new Date().getTime() / 1000);
             const maxSale = await SaleKnightModel.find({}).populate("knight").sort({"price": -1 }).limit(5)
@@ -174,7 +186,7 @@ class KnightController {
         }
     }
 
-    async buySaleKnight(req, res) {
+    async buySaleKnight(req: Request, res: Response) {
         const { bidID, newOwner} = req.body;
         console.log(req.body)
         SaleKnightModel.findOneAndDelete({ bidID })
@@ -191,7 +203,7 @@ class KnightController {
         .catch((error) => console.log("Buy Sale Knight False: ", error));
     }
 
-    async destroySaleKnight(req, res) {
+    async destroySaleKnight(req: Request, res: Response) {
         const { bidID } = req.query;
         SaleKnightModel.findOneAndDelete({bidID})
         .then((dataRes) => {
@@ -207,7 +219,7 @@ class KnightController {
 
     }
 
-    async levelUp(req, res) {
+    async levelUp(req: Request, res: Response) {
         const {knightID} = req.body;
         const myKnight = await KnightModel.findOne({knightID})
         if (myKnight) {
@@ -225,7 +237,7 @@ class KnightController {
 
     }
 
-    async changeName(req, res) {
+    async changeName(req: Request, res: Response) {
         const {knightID, newName} = req.body;
         const myKnight = await KnightModel.findOne({knightID})
         if (myKnight) {
@@ -240,18 +252,18 @@ class KnightController {
         return res.status(500).json({statu: 500, message:"changeName false!"});
     }
 
-    async battleResults(req, res) {
+    async battleResults(req: Request, res: Response) {
         const {result, idKnightWin, idKnightLose} = req.body;
         const knightWin = await KnightModel.findOne({knightID: parseInt(idKnightWin)});
         const knightLose = await KnightModel.findOne({knightID: parseInt(idKnightLose)});
-        if (knightLose && knightWin) {
+        if (knightLose && knightWin ) {
             if(result) {
                 knightWin.level += 1;
-                knightWin.winCount += 1;
-                knightLose.lostCount += 1;
+                knightWin.winCount ? knightWin.winCount += 1 : '';
+                knightLose.lostCount ? knightLose.lostCount += 1 : '';
             } else {
-                knightWin.winCount += 1;
-                knightLose.lostCount += 1;
+                knightWin.winCount ? knightWin.winCount += 1 : '';
+                knightLose.lostCount ? knightLose.lostCount += 1 : '';
             }
             await knightWin.save()
             .then((dataWin) =>{
@@ -266,7 +278,7 @@ class KnightController {
         }
     }
 
-    async triggerCoolDown(req, res) {
+    async triggerCoolDown(req: Request, res: Response) {
         const {knightID, timeOut} = req.body;
         KnightModel.updateOne({knightID: parseInt(knightID)}, {$set: { attackTime: timeOut}})
         .then((dataUpdate) => {
@@ -277,7 +289,7 @@ class KnightController {
         })
     }
 
-    async triggerTired(req, res) {
+    async triggerTired(req: Request, res: Response) {
         const {knightID, timeOut} = req.body;
         KnightModel.updateOne({knightID: parseInt(knightID)},{$set:  { sexTime: timeOut}})
         .then((dataUpdate) => {
@@ -288,7 +300,7 @@ class KnightController {
         })
     }
 
-    async transferFrom(req, res) {
+    async transferFrom(req: Request, res: Response) {
         const {knightID, newOwner} = req.body;
         KnightModel.findOneAndUpdate({knightID}, {$set: {owner: newOwner.toLowerCase()}})
         .then((data) => {
@@ -299,7 +311,7 @@ class KnightController {
         })
     }
 
-    async allKnight(req, res) {
+    async allKnight(req: Request, res: Response) {
         KnightModel.find().sort({createdAt: -1})
         .then((data) => {
             res.status(200).json({statu: 200, message:"success", data});
@@ -309,7 +321,7 @@ class KnightController {
         })
     }
 
-    async saleMaxKnight(req, res) {
+    async saleMaxKnight(req: Request, res: Response) {
         const now = Math.floor(new Date().getTime() / 1000);
         const maxSale = await SaleKnightModel.find({timeEnd: {$gt: now}}).populate("knight").sort({"price": -1 }).limit(1)
         .then((data) => {
@@ -320,7 +332,7 @@ class KnightController {
         })
     }
 
-    async saleMediumKnight(req, res) {
+    async saleMediumKnight(req: Request, res: Response) {
         try {
             const now = Math.floor(new Date().getTime() / 1000);
             const maxSale = await SaleKnightModel.find({}).populate("knight").sort({"price": -1 }).limit(1)

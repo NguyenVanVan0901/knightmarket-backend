@@ -1,6 +1,7 @@
 const Knight = require('./knight');
 import routerKnight from "./knight";
-function route(app){
+import { Express } from "express";
+function route(app: Express){
     app.use('/v1/api', routerKnight);
 }
 

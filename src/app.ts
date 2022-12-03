@@ -4,7 +4,7 @@ import cors from 'cors';
 import route from './routers';
 import { connectDatabase } from './config/database';
 import { seedData } from './config/seed';
-
+import Logger from './utility/logger';
 class App {
   public express;
 
@@ -13,7 +13,7 @@ class App {
   }
 
   public async init() {
-    await connectDatabase('knight_market');
+    await connectDatabase('KnightMarket');
     this.express.use(cors());
     this.express.use(express.json());
     this.express.use(express.urlencoded({ extended: true }));
@@ -27,8 +27,8 @@ class App {
 
   }
 
-  public start(port: number) {
-    return this.express.listen(port, () =>  console.log(`App running on port: ${port}`));
+  public async start(port: number) {
+    return this.express.listen(port, () =>  Logger.info(`App running on port: ${port}`));
   }
 }
 

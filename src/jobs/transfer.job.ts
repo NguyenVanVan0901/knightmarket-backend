@@ -2,19 +2,20 @@ import { CronJob } from "cron";
 import { IKightMarket, KnightMarketModel } from "../app/models/KnightMarket";
 import { TYPE_EVENT } from "../constants/global";
 import Web3 from "web3";
+import { AbiItem } from "web3-utils";
 import { EventData } from 'web3-eth-contract';
 import { KnightModel } from "../app/models/Knight";
 import { SaleKnightModel } from "../app/models/SaleKnight";
 import axios from "axios";
 import { RequestMarryModel } from "../app/models/RequestMarry";
 import ConfigEnv from "../env";
-const KnightAbi = require("../abi/knight.json");
+import KnightAbi from "../abi/knight.json";
 const providerAchemy = new Web3.providers.WebsocketProvider(
     "wss://polygon-mumbai.g.alchemy.com/v2/wU4prjL7wZdA2-1i3rKqWVLxDoOKBQfE"
 );
 const web3Achemy = new Web3(providerAchemy);
 const KnightContract = new web3Achemy.eth.Contract(
-    KnightAbi,
+    KnightAbi as AbiItem[],
     ConfigEnv.CONTRACT[ConfigEnv.CHAIN_DEFAULT].KnghitNFT
 );
 
@@ -22,9 +23,9 @@ class JobManager {
     isRunning: boolean;
     collection: IKightMarket;
 
-    constructor(collection: IKightMarket) {
+    constructor(callback: any) {
         this.isRunning = false;
-        this.collection = collection;
+        this.collection = callback();
     }
 }
 
@@ -33,6 +34,9 @@ class JobScanKnightMarket {
     jobManager: JobManager;
 
     constructor() {
+        this.jobManager = new JobManager(async ()=> {
+            return await KnightMarketModel.findOne();
+        });
         this.cronJob = new CronJob("*/12 * * * * *", async () => {
             try {
                 if (!this.jobManager.isRunning) {
@@ -164,7 +168,9 @@ class JobScanKnightMarket {
             console.log(`Handle scan from block: `, fromBlock, ' => ', lastBlock);
             this.jobManager.collection.scanToBlock = lastBlock;
             this.jobManager.isRunning = false;
-        } catch (error) {
+        } catch (error: any) {
+            console.log(this.jobManager);
+            
           console.log('Scan knight market fail', error.message);
           this.jobManager.isRunning = false;
         }
@@ -178,7 +184,7 @@ class JobScanKnightMarket {
               await KnightModel.updateOne({knightID: parseInt(event.returnValues.tokenId)}, { owner: event.returnValues.to.toLowerCase()})
               console.log(`Update owner kngiht id ${ event.returnValues.tokenId } success`);
             }
-        } catch (error) {
+        } catch (error: any) {
           console.log('Error Transfer NFT', error.message);
           
         }
@@ -208,7 +214,7 @@ class JobScanKnightMarket {
                     "ipfs://",
                     "https://ipfs.io/ipfs/"
                 );
-                const { data } =  await axios.get(uriMetadata);
+                const data  = await  this.handleMetadata(uriMetadata);
                 NewKnight.image = data?.image?.replace(
                     "ipfs://",
                     "https://ipfs.io/ipfs/"
@@ -217,7 +223,7 @@ class JobScanKnightMarket {
                 await NewKnight.save();
                 console.log(`Create kngiht id ${ event.returnValues.knightID } success`);
             }
-        } catch (error) {
+        } catch (error: any) {
           console.log('Error create new NFT', error.message);
         }
     }
@@ -240,7 +246,7 @@ class JobScanKnightMarket {
                     console.log("SaleKnight Knight Succcess");
                 }
             }
-        } catch (error) {
+        } catch (error: any) {
             console.log('Error Handle Sale Knight: ', error.message);
             
         }
@@ -262,7 +268,7 @@ class JobScanKnightMarket {
                     console.log("Update Knight Succcess", event.returnValues.knightID);
                 }
             }
-        } catch (error) {
+        } catch (error: any) {
             console.log('Error Handle Buy Knight: ', error.message);
         }
     }
@@ -280,7 +286,7 @@ class JobScanKnightMarket {
                     console.log("Update Knight Succcess");
                 }
             }
-        } catch (error) {
+        } catch (error: any) {
             console.log('Error Handle Destroy Knight: ', error.message);
         }
     }
@@ -306,7 +312,7 @@ class JobScanKnightMarket {
                     console.log("Request Marry Knight Succcess");
                 }
             }
-        } catch (error) {
+        } catch (error: any) {
           console.log('Error Request Marry Knight', error.message);
         }
     }
@@ -324,7 +330,7 @@ class JobScanKnightMarket {
                 ]}, { $set: { maritalStatus: true } })
                 console.log("ApprovalMarry Knight Succcess");
             }
-        } catch (error) {
+        } catch (error: any) {
           console.log('Error ApprovalMarry Knight: ', error.message);
         }
     }
@@ -335,7 +341,7 @@ class JobScanKnightMarket {
                 await KnightModel.updateOne({ knightID: parseInt(event.returnValues._knightID) }, { level: event.returnValues._newlevel })
                 console.log("LevelUp Knight Succcess");
             }
-        } catch (error) {
+        } catch (error: any) {
             console.log('Error LevelUp Knight:', error.message);
         }
     }
@@ -349,7 +355,7 @@ class JobScanKnightMarket {
                 );
                 console.log("TriggerCoolDown Knight Succcess");
             }
-        } catch (error) {
+        } catch (error: any) {
             console.log('Error TriggerCoolDown Knight:', error.message);
         }
     }
@@ -360,7 +366,7 @@ class JobScanKnightMarket {
                 await KnightModel.updateOne({ knightID: parseInt(event.returnValues._knightID) }, { sexTime: event.returnValues._timeOut })
                 console.log("Trigger Tired Knight Succcess");
             }
-        } catch (error) {
+        } catch (error: any) {
             console.log('Error Trigger Tired:', error.message);
             
         }
@@ -371,44 +377,77 @@ class JobScanKnightMarket {
             for (const event of eventLogs) {
                 const knightWin = await KnightModel.findOne({ knightID: parseInt(event.returnValues._knightWin) });
                 const knightLose = await KnightModel.findOne({ knightID: parseInt(event.returnValues._knightLose) });
-                if(event.returnValues._result) {
-                    knightWin.level += knightWin.level +1;
-                    knightWin.winCount += knightWin.winCount +1;
-                    knightLose.lostCount += knightWin.lostCount +1;
-                } else {
-                    knightWin.winCount += knightWin.winCount +1;
-                    knightLose.lostCount += knightWin.lostCount +1;
+                if (knightLose && knightWin) {
+                    if(event.returnValues._result) {
+                        knightWin.level += 1;
+                        knightWin.winCount ? knightWin.winCount += 1 : '';
+                        knightLose.lostCount ? knightLose.lostCount += 1 : '';
+                    } else {
+                        knightWin.winCount ? knightWin.winCount += 1 : '';
+                        knightLose.lostCount ? knightLose.lostCount += 1 : '';
+                    }
+                    await knightWin.save()
+                    console.log("Update Knight Win Succcess");
+                    await knightLose.save()
+                    console.log("Update Knight Lose Succcess");
                 }
-                await knightWin.save()
-                console.log("Update Knight Win Succcess");
-                await knightLose.save()
-                console.log("Update Knight Lose Succcess");
+                
             }
-        } catch (error) {
+        } catch (error: any) {
             console.log('Error Battel Resoult:', error.message);
         }
     }
     
+    async handleMetadata(uriMetadata: string): Promise<any> {
+        try {
+            const { data } = await axios.get(uriMetadata);
+            return data;
+        } catch (error: any) {
+            console.log('Get metadata fail =>', uriMetadata);
+            console.log('Error =>', error.message);
+            return null;
+        }
+    }
 
     async start(): Promise<void> {
-        if (!this.cronJob.running) {
-            await this.initManager();
-            await KnightMarketModel.updateOne({}, { isScan: true });
-            this.cronJob.start();
-            console.log("Running job scan transfer NFT");
+        try {
+            if (!this.cronJob.running) {
+                await KnightMarketModel.updateOne({}, { isScan: true });
+                const checkDataJob = await this.jobManager.collection;
+                if (!checkDataJob) {
+                    const knightMarket = await KnightMarketModel.findOne();
+                    this.jobManager.collection = knightMarket ? knightMarket : await this.jobManager.collection;
+                    console.log("this.jobManager.collection: ",  this.jobManager.collection);
+                    
+                    this.cronJob.start();
+                    console.log("Running job scan knight market => ", this.jobManager.collection.address);
+                } else if (checkDataJob) {
+                    console.log("checkDataJob: ",  checkDataJob);
+                    this.jobManager.collection = checkDataJob;
+                    this.cronJob.start();
+                    console.log("Running job scan knight market => ", this.jobManager.collection.address);
+                } else {
+                    console.log("Knight market not created yet");
+                    console.log("Can't run job scan knight market");
+                }
+            }
+        } catch (error: any) {
+            console.log('Start job scan knight market failure: ', error.message);
+            
         }
     }
 
-    async close(): Promise<void> {
-        if (this.cronJob.running) {
-            await KnightMarketModel.updateOne({}, { isScan: false });
-            console.log("Closed job scan transfer NFT");
+    async close(): Promise<void> {    
+        try {
+            if (this.cronJob.running) {
+                // await KnightMarketModel.updateOne({}, { isScan: false });
+                await KnightMarketModel.deleteMany();
+                console.log("Closed job scan knight market");
+            }
+        } catch (error: any) {
+            console.log('Close job scan knight market failure: ', error.message);
+            
         }
-    }
-
-    async initManager(): Promise<void> {
-        const knightMarket = await KnightMarketModel.findOne();
-        this.jobManager = new JobManager(knightMarket);
     }
 }
 
