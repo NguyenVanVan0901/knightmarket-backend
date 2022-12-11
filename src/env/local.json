@@ -1,14 +1,23 @@
 {
-    "CHAIN_DEFAULT": 5,
+    "CHAIN_DEFAULT": 97,
     "CONTRACT": {
         "5": {
-            "KnghitNFT": "0xF0edB145C9f8f5608B60B76b06E9080D2eA3488D"
+            "KnghitNFT": "0xF0edB145C9f8f5608B60B76b06E9080D2eA3488D",
+            "BlockDeploy": 29361458,
+            "JsonRPC": "https://eth-goerli.nodereal.io/v1/6a7355fd75de4afdae631b203b8f24ef",
+            "WebSocketRPC": "wss://eth-goerli.nodereal.io/ws/v1/6a7355fd75de4afdae631b203b8f24ef"
+        },
+        "97": {
+            "KnghitNFT": "0x2652A36433E7C65396D5a294733fD72CaeCAA83f",
+            "BlockDeploy": 25366226,
+            "JsonRPC": "https://bsc-testnet.nodereal.io/v1/e1a91d0d24ee4f1194033683edddd57b",
+            "WebSocketRPC": "wss://bsc-testnet.nodereal.io/ws/v1/e1a91d0d24ee4f1194033683edddd57b"
         },
         "80001": {
-            "KnghitNFT": "0xF0edB145C9f8f5608B60B76b06E9080D2eA3488D"
+            "KnghitNFT": "0xF0edB145C9f8f5608B60B76b06E9080D2eA3488D",
+            "BlockDeploy": 29361458,
+            "JsonRPC": "https://polygon-mumbai.g.alchemy.com/v2/VM5Ptk_NLRAgwRpDk3J0_q0s2bpYFbkR",
+            "WebSocketRPC": "wss://polygon-mumbai.g.alchemy.com/v2/wU4prjL7wZdA2-1i3rKqWVLxDoOKBQfE"
         }
-    },
-    "BLOCK_DEPLOY": 29361458,
-    "JSON_RPC": "https://polygon-mumbai.g.alchemy.com/v2/VM5Ptk_NLRAgwRpDk3J0_q0s2bpYFbkR"
-
+    }
 }

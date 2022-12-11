@@ -10,9 +10,9 @@ class SeedData {
             }
             const payloadKnightMarket:IKightMarket = {
                 address: ConfigEnv.CONTRACT[ConfigEnv.CHAIN_DEFAULT].KnghitNFT.toLowerCase(),
-                jsonRPC: ConfigEnv.JSON_RPC,
-                scanToBlock: ConfigEnv.BLOCK_DEPLOY,
-                blockDeploy: ConfigEnv.BLOCK_DEPLOY,
+                jsonRPC:ConfigEnv.CONTRACT[ConfigEnv.CHAIN_DEFAULT].JsonRPC,
+                scanToBlock: ConfigEnv.CONTRACT[ConfigEnv.CHAIN_DEFAULT].BlockDeploy,
+                blockDeploy: ConfigEnv.CONTRACT[ConfigEnv.CHAIN_DEFAULT].BlockDeploy,
             }
 
             await KnightMarketModel.create(payloadKnightMarket);

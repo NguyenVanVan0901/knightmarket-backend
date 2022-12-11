@@ -10,13 +10,13 @@ import axios from "axios";
 import { RequestMarryModel } from "../app/models/RequestMarry";
 import ConfigEnv from "../env";
 import KnightAbi from "../abi/knight.json";
-const providerAchemy = new Web3.providers.WebsocketProvider(
-    "wss://polygon-mumbai.g.alchemy.com/v2/wU4prjL7wZdA2-1i3rKqWVLxDoOKBQfE"
-);
+import Logger from "../utility/logger";
+const chainId = ConfigEnv.CHAIN_DEFAULT;
+const providerAchemy = new Web3.providers.WebsocketProvider(ConfigEnv.CONTRACT[chainId].WebSocketRPC);
 const web3Achemy = new Web3(providerAchemy);
 const KnightContract = new web3Achemy.eth.Contract(
     KnightAbi as AbiItem[],
-    ConfigEnv.CONTRACT[ConfigEnv.CHAIN_DEFAULT].KnghitNFT
+    ConfigEnv.CONTRACT[chainId].KnghitNFT
 );
 
 class JobManager {
@@ -67,7 +67,7 @@ class JobScanKnightMarket {
                 TYPE_EVENT.NEW_KNIGHT,
                 {
                     filter: {},
-                    fromBlock: this.jobManager.collection.scanToBlock,
+                    fromBlock: fromBlock,
                     toBlock: lastBlock,
                 }
             );
@@ -192,40 +192,37 @@ class JobScanKnightMarket {
 
     async handleNewKnight(eventLogs: EventData[]): Promise<void> {
         try {
-            console.log(eventLogs);
-            console.log(eventLogs.length);
             
-            // for (let i = 0; i < eventLogs.length; i++) {
-            //     const event = eventLogs[i];
-            //     const tokenIsExited = await KnightModel.findOne({ knightID: parseInt(event.returnValues.knightID) })
-            //     if (tokenIsExited) {
-            //         console.log('Da create roi');
-            //         continue;
-            //     }
-            //     const permaLinkBase = `https://testnets.opensea.io/assets/mumbai/${this.jobManager.collection.address}/${event.returnValues.knightID}`;
-            //     const NewKnight = new KnightModel({
-            //         dna: event.returnValues.dna,
-            //         knightID: event.returnValues.knightID,
-            //         level: event.returnValues.level,
-            //         attackTime: event.returnValues.readyTime,
-            //         sexTime: event.returnValues.sexTime,
-            //         owner: event.returnValues.owner.toLowerCase(),
-            //         tokenURI: event.returnValues.tokenURI,
-            //         permaLink: permaLinkBase,
-            //     });
-            //     const uriMetadata = event.returnValues.tokenURI.replace(
-            //         "ipfs://",
-            //         "https://ipfs.io/ipfs/"
-            //     );
-            //     const data  = await  this.handleMetadata(uriMetadata);
-            //     NewKnight.image = data?.image?.replace(
-            //         "ipfs://",
-            //         "https://ipfs.io/ipfs/"
-            //     ) ?? "http://localhost:2105/static/21.png";
-            //     NewKnight.name = event.returnValues.name + " - " + data?.name;
-            //     await NewKnight.save();
-            //     console.log(`Create kngiht id ${ event.returnValues.knightID } success`);
-            // }
+            for (let i = 0; i < eventLogs.length; i++) {
+                const event = eventLogs[i];
+                const tokenIsExited = await KnightModel.findOne({ knightID: parseInt(event.returnValues.knightID) })
+                if (tokenIsExited) {
+                    continue;
+                }
+                const permaLinkBase = `https://testnets.opensea.io/assets/mumbai/${this.jobManager.collection.address}/${event.returnValues.knightID}`;
+                const NewKnight = new KnightModel({
+                    dna: event.returnValues.dna,
+                    knightID: event.returnValues.knightID,
+                    level: event.returnValues.level,
+                    attackTime: event.returnValues.readyTime,
+                    sexTime: event.returnValues.sexTime,
+                    owner: event.returnValues.owner.toLowerCase(),
+                    tokenURI: event.returnValues.tokenURI,
+                    permaLink: permaLinkBase,
+                });
+                const uriMetadata = event.returnValues.tokenURI.replace(
+                    "ipfs://",
+                    "https://ipfs.io/ipfs/"
+                );
+                const data  = await  this.handleMetadata(uriMetadata);
+                NewKnight.image = data?.image?.replace(
+                    "ipfs://",
+                    "https://ipfs.io/ipfs/"
+                ) ?? `${process.env.APP_URL}21.png`;
+                NewKnight.name = event.returnValues.name + " - " + data?.name;
+                await NewKnight.save();
+                console.log(`Create kngiht id ${ event.returnValues.knightID } success`);
+            }
         } catch (error: any) {
           console.log('Error create new NFT', error.message);
         }
@@ -421,11 +418,15 @@ class JobScanKnightMarket {
                     const knightMarket = await KnightMarketModel.findOne();
                     this.jobManager.collection = knightMarket ? knightMarket : await this.jobManager.collection;
                     this.cronJob.start();
-                    console.log("Running job scan knight market => ", this.jobManager.collection.address);
+                    Logger.info(`Running job with address => ${this.jobManager.collection.address}`)
+                    Logger.warn(`Running job with chain => ${ConfigEnv.CHAIN_DEFAULT}`)
+                    Logger.warn(`Running job with wss => ${ConfigEnv.CONTRACT[chainId].WebSocketRPC}`)
                 } else if (checkDataJob) {
                     this.jobManager.collection = checkDataJob;
                     this.cronJob.start();
-                    console.log("Running job scan knight market => ", this.jobManager.collection.address);
+                    Logger.info(`Running job with address => ${this.jobManager.collection.address}`)
+                    Logger.warn(`Running job with chain => ${ConfigEnv.CHAIN_DEFAULT}`)
+                    Logger.warn(`Running job with wss => ${ConfigEnv.CONTRACT[chainId].WebSocketRPC}`)
                 } else {
                     console.log("Knight market not created yet");
                     console.log("Can't run job scan knight market");
