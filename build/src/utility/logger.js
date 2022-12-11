@@ -26,7 +26,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const winston_1 = __importStar(require("winston"));
 const { combine, timestamp, printf, colorize, json } = winston_1.format;
 const logFormat = printf(({ level, message, timestamp }) => {
-    return `${timestamp} ${level}: ${message}`;
+    return `${timestamp} [${level}]: ${message}`;
 });
 const Logger = winston_1.default.createLogger({
     format: combine(timestamp({ format: 'hh:mm:ss DD-MM-YYYY' }), colorize(), json(), logFormat),

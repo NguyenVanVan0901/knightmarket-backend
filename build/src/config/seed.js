@@ -25,9 +25,9 @@ class SeedData {
                 }
                 const payloadKnightMarket = {
                     address: env_1.default.CONTRACT[env_1.default.CHAIN_DEFAULT].KnghitNFT.toLowerCase(),
-                    jsonRPC: env_1.default.JSON_RPC,
-                    scanToBlock: env_1.default.BLOCK_DEPLOY,
-                    blockDeploy: env_1.default.BLOCK_DEPLOY,
+                    jsonRPC: env_1.default.CONTRACT[env_1.default.CHAIN_DEFAULT].JsonRPC,
+                    scanToBlock: env_1.default.CONTRACT[env_1.default.CHAIN_DEFAULT].BlockDeploy,
+                    blockDeploy: env_1.default.CONTRACT[env_1.default.CHAIN_DEFAULT].BlockDeploy,
                 };
                 yield KnightMarket_1.KnightMarketModel.create(payloadKnightMarket);
                 console.log('Success: Init knight market ');

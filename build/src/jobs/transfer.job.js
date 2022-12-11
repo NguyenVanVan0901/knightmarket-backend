@@ -23,9 +23,11 @@ const axios_1 = __importDefault(require("axios"));
 const RequestMarry_1 = require("../app/models/RequestMarry");
 const env_1 = __importDefault(require("../env"));
 const knight_json_1 = __importDefault(require("../abi/knight.json"));
-const providerAchemy = new web3_1.default.providers.WebsocketProvider("wss://polygon-mumbai.g.alchemy.com/v2/wU4prjL7wZdA2-1i3rKqWVLxDoOKBQfE");
+const logger_1 = __importDefault(require("../utility/logger"));
+const chainId = env_1.default.CHAIN_DEFAULT;
+const providerAchemy = new web3_1.default.providers.WebsocketProvider(env_1.default.CONTRACT[chainId].WebSocketRPC);
 const web3Achemy = new web3_1.default(providerAchemy);
-const KnightContract = new web3Achemy.eth.Contract(knight_json_1.default, env_1.default.CONTRACT[env_1.default.CHAIN_DEFAULT].KnghitNFT);
+const KnightContract = new web3Achemy.eth.Contract(knight_json_1.default, env_1.default.CONTRACT[chainId].KnghitNFT);
 class JobManager {
     constructor(callback) {
         this.isRunning = false;
@@ -61,7 +63,7 @@ class JobScanKnightMarket {
                 });
                 const eventsLogNewKnight = yield KnightContract.getPastEvents(global_1.TYPE_EVENT.NEW_KNIGHT, {
                     filter: {},
-                    fromBlock: this.jobManager.collection.scanToBlock,
+                    fromBlock: fromBlock,
                     toBlock: lastBlock,
                 });
                 const eventsLogSaleKnight = yield KnightContract.getPastEvents(global_1.TYPE_EVENT.SALE_KNIGHT, {
@@ -110,16 +112,16 @@ class JobScanKnightMarket {
                     toBlock: lastBlock,
                 });
                 yield this.handleNewKnight(eventsLogNewKnight);
-                yield this.handleSaleKnight(eventsLogSaleKnight);
-                yield this.handleBuyKnight(eventsLogBuyKnight);
-                yield this.handleDestroySaleKnight(eventsLogDestroySaleKnight);
-                yield this.handleTransfer(eventsLogTransfer);
-                yield this.handleRequestMarry(eventsLogRequestMarry);
-                yield this.handleApprovalMarry(eventsLogApprovalMarry);
-                yield this.handleLevelUp(eventsLogLevelUp);
-                yield this.handleTriggerCooldown(eventsLogTriggerCooldown);
-                yield this.handleTriggerTired(eventsLogTriggerTired);
-                yield this.handleBattelResoult(eventsLogBattelResoult);
+                // await this.handleSaleKnight(eventsLogSaleKnight);
+                // await this.handleBuyKnight(eventsLogBuyKnight);
+                // await this.handleDestroySaleKnight(eventsLogDestroySaleKnight);
+                // await this.handleTransfer(eventsLogTransfer);
+                // await this.handleRequestMarry(eventsLogRequestMarry);
+                // await this.handleApprovalMarry(eventsLogApprovalMarry);
+                // await this.handleLevelUp(eventsLogLevelUp);
+                // await this.handleTriggerCooldown(eventsLogTriggerCooldown);
+                // await this.handleTriggerTired(eventsLogTriggerTired);
+                // await this.handleBattelResoult(eventsLogBattelResoult);
                 yield KnightMarket_1.KnightMarketModel.updateOne({}, { scanToBlock: lastBlock });
                 console.log(`Handle scan from block: `, fromBlock, ' => ', lastBlock);
                 this.jobManager.collection.scanToBlock = lastBlock;
@@ -154,7 +156,6 @@ class JobScanKnightMarket {
                     const event = eventLogs[i];
                     const tokenIsExited = yield Knight_1.KnightModel.findOne({ knightID: parseInt(event.returnValues.knightID) });
                     if (tokenIsExited) {
-                        console.log('Da create roi');
                         continue;
                     }
                     const permaLinkBase = `https://testnets.opensea.io/assets/mumbai/${this.jobManager.collection.address}/${event.returnValues.knightID}`;
@@ -170,7 +171,7 @@ class JobScanKnightMarket {
                     });
                     const uriMetadata = event.returnValues.tokenURI.replace("ipfs://", "https://ipfs.io/ipfs/");
                     const data = yield this.handleMetadata(uriMetadata);
-                    NewKnight.image = (_b = (_a = data === null || data === void 0 ? void 0 : data.image) === null || _a === void 0 ? void 0 : _a.replace("ipfs://", "https://ipfs.io/ipfs/")) !== null && _b !== void 0 ? _b : "http://localhost:2105/static/21.png";
+                    NewKnight.image = (_b = (_a = data === null || data === void 0 ? void 0 : data.image) === null || _a === void 0 ? void 0 : _a.replace("ipfs://", "https://ipfs.io/ipfs/")) !== null && _b !== void 0 ? _b : `${process.env.APP_URL}21.png`;
                     NewKnight.name = event.returnValues.name + " - " + (data === null || data === void 0 ? void 0 : data.name);
                     yield NewKnight.save();
                     console.log(`Create kngiht id ${event.returnValues.knightID} success`);
@@ -384,12 +385,16 @@ class JobScanKnightMarket {
                         const knightMarket = yield KnightMarket_1.KnightMarketModel.findOne();
                         this.jobManager.collection = knightMarket ? knightMarket : yield this.jobManager.collection;
                         this.cronJob.start();
-                        console.log("Running job scan knight market => ", this.jobManager.collection.address);
+                        logger_1.default.info(`Running job with address => ${this.jobManager.collection.address}`);
+                        logger_1.default.warn(`Running job with chain => ${env_1.default.CHAIN_DEFAULT}`);
+                        logger_1.default.warn(`Running job with wss => ${env_1.default.CONTRACT[chainId].WebSocketRPC}`);
                     }
                     else if (checkDataJob) {
                         this.jobManager.collection = checkDataJob;
                         this.cronJob.start();
-                        console.log("Running job scan knight market => ", this.jobManager.collection.address);
+                        logger_1.default.info(`Running job with address => ${this.jobManager.collection.address}`);
+                        logger_1.default.warn(`Running job with chain => ${env_1.default.CHAIN_DEFAULT}`);
+                        logger_1.default.warn(`Running job with wss => ${env_1.default.CONTRACT[chainId].WebSocketRPC}`);
                     }
                     else {
                         console.log("Knight market not created yet");
