@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 import app from './app';
 import { jobScanKnightMarket } from './jobs/transfer.job';
+import "./uploads";
 (async () => {
   try {
     await app.init();

@@ -102,6 +102,7 @@
   },
   "include": [
     "./",
-    "src/env/*.json"
+    "src/env/*.json",
+    "src/uploads"
   ]
 }
