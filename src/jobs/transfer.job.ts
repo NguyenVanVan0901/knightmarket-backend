@@ -154,16 +154,16 @@ class JobScanKnightMarket {
             );
             
             await this.handleNewKnight(eventsLogNewKnight);
-            await this.handleSaleKnight(eventsLogSaleKnight);
-            await this.handleBuyKnight(eventsLogBuyKnight);
-            await this.handleDestroySaleKnight(eventsLogDestroySaleKnight);
-            await this.handleTransfer(eventsLogTransfer);
-            await this.handleRequestMarry(eventsLogRequestMarry);
-            await this.handleApprovalMarry(eventsLogApprovalMarry);
-            await this.handleLevelUp(eventsLogLevelUp);
-            await this.handleTriggerCooldown(eventsLogTriggerCooldown);
-            await this.handleTriggerTired(eventsLogTriggerTired);
-            await this.handleBattelResoult(eventsLogBattelResoult);
+            // await this.handleSaleKnight(eventsLogSaleKnight);
+            // await this.handleBuyKnight(eventsLogBuyKnight);
+            // await this.handleDestroySaleKnight(eventsLogDestroySaleKnight);
+            // await this.handleTransfer(eventsLogTransfer);
+            // await this.handleRequestMarry(eventsLogRequestMarry);
+            // await this.handleApprovalMarry(eventsLogApprovalMarry);
+            // await this.handleLevelUp(eventsLogLevelUp);
+            // await this.handleTriggerCooldown(eventsLogTriggerCooldown);
+            // await this.handleTriggerTired(eventsLogTriggerTired);
+            // await this.handleBattelResoult(eventsLogBattelResoult);
             await KnightMarketModel.updateOne({}, { scanToBlock: lastBlock });
             console.log(`Handle scan from block: `, fromBlock, ' => ', lastBlock);
             this.jobManager.collection.scanToBlock = lastBlock;
@@ -192,37 +192,40 @@ class JobScanKnightMarket {
 
     async handleNewKnight(eventLogs: EventData[]): Promise<void> {
         try {
-            for (let i = 0; i < eventLogs.length; i++) {
-                const event = eventLogs[i];
-                const tokenIsExited = await KnightModel.findOne({ knightID: parseInt(event.returnValues.knightID) })
-                if (tokenIsExited) {
-                    console.log('Da create roi');
-                    continue;
-                }
-                const permaLinkBase = `https://testnets.opensea.io/assets/mumbai/${this.jobManager.collection.address}/${event.returnValues.knightID}`;
-                const NewKnight = new KnightModel({
-                    dna: event.returnValues.dna,
-                    knightID: event.returnValues.knightID,
-                    level: event.returnValues.level,
-                    attackTime: event.returnValues.readyTime,
-                    sexTime: event.returnValues.sexTime,
-                    owner: event.returnValues.owner.toLowerCase(),
-                    tokenURI: event.returnValues.tokenURI,
-                    permaLink: permaLinkBase,
-                });
-                const uriMetadata = event.returnValues.tokenURI.replace(
-                    "ipfs://",
-                    "https://ipfs.io/ipfs/"
-                );
-                const data  = await  this.handleMetadata(uriMetadata);
-                NewKnight.image = data?.image?.replace(
-                    "ipfs://",
-                    "https://ipfs.io/ipfs/"
-                ) ?? "http://localhost:2105/static/21.png";
-                NewKnight.name = event.returnValues.name + " - " + data?.name;
-                await NewKnight.save();
-                console.log(`Create kngiht id ${ event.returnValues.knightID } success`);
-            }
+            console.log(eventLogs);
+            console.log(eventLogs.length);
+            
+            // for (let i = 0; i < eventLogs.length; i++) {
+            //     const event = eventLogs[i];
+            //     const tokenIsExited = await KnightModel.findOne({ knightID: parseInt(event.returnValues.knightID) })
+            //     if (tokenIsExited) {
+            //         console.log('Da create roi');
+            //         continue;
+            //     }
+            //     const permaLinkBase = `https://testnets.opensea.io/assets/mumbai/${this.jobManager.collection.address}/${event.returnValues.knightID}`;
+            //     const NewKnight = new KnightModel({
+            //         dna: event.returnValues.dna,
+            //         knightID: event.returnValues.knightID,
+            //         level: event.returnValues.level,
+            //         attackTime: event.returnValues.readyTime,
+            //         sexTime: event.returnValues.sexTime,
+            //         owner: event.returnValues.owner.toLowerCase(),
+            //         tokenURI: event.returnValues.tokenURI,
+            //         permaLink: permaLinkBase,
+            //     });
+            //     const uriMetadata = event.returnValues.tokenURI.replace(
+            //         "ipfs://",
+            //         "https://ipfs.io/ipfs/"
+            //     );
+            //     const data  = await  this.handleMetadata(uriMetadata);
+            //     NewKnight.image = data?.image?.replace(
+            //         "ipfs://",
+            //         "https://ipfs.io/ipfs/"
+            //     ) ?? "http://localhost:2105/static/21.png";
+            //     NewKnight.name = event.returnValues.name + " - " + data?.name;
+            //     await NewKnight.save();
+            //     console.log(`Create kngiht id ${ event.returnValues.knightID } success`);
+            // }
         } catch (error: any) {
           console.log('Error create new NFT', error.message);
         }
