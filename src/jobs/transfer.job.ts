@@ -37,7 +37,7 @@ class JobScanKnightMarket {
         this.jobManager = new JobManager(async ()=> {
             return await KnightMarketModel.findOne();
         });
-        this.cronJob = new CronJob("*/12 * * * * *", async () => {
+        this.cronJob = new CronJob("*/3 * * * * *", async () => {
             try {
                 if (!this.jobManager.isRunning) {
                     await this.handleScanKnightMarket();
@@ -197,7 +197,7 @@ class JobScanKnightMarket {
                 const tokenIsExited = await KnightModel.findOne({ knightID: parseInt(event.returnValues.knightID) })
                 if (tokenIsExited) {
                     console.log('Da create roi');
-                    return;
+                    continue;
                 }
                 const permaLinkBase = `https://testnets.opensea.io/assets/mumbai/${this.jobManager.collection.address}/${event.returnValues.knightID}`;
                 const NewKnight = new KnightModel({
@@ -218,7 +218,7 @@ class JobScanKnightMarket {
                 NewKnight.image = data?.image?.replace(
                     "ipfs://",
                     "https://ipfs.io/ipfs/"
-                );
+                ) ?? "http://localhost:2105/static/21.png";
                 NewKnight.name = event.returnValues.name + " - " + data?.name;
                 await NewKnight.save();
                 console.log(`Create kngiht id ${ event.returnValues.knightID } success`);
@@ -417,12 +417,9 @@ class JobScanKnightMarket {
                 if (!checkDataJob) {
                     const knightMarket = await KnightMarketModel.findOne();
                     this.jobManager.collection = knightMarket ? knightMarket : await this.jobManager.collection;
-                    console.log("this.jobManager.collection: ",  this.jobManager.collection);
-                    
                     this.cronJob.start();
                     console.log("Running job scan knight market => ", this.jobManager.collection.address);
                 } else if (checkDataJob) {
-                    console.log("checkDataJob: ",  checkDataJob);
                     this.jobManager.collection = checkDataJob;
                     this.cronJob.start();
                     console.log("Running job scan knight market => ", this.jobManager.collection.address);
