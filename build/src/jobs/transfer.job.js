@@ -15,7 +15,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.jobScanKnightMarket = void 0;
 const cron_1 = require("cron");
 const KnightMarket_1 = require("../app/models/KnightMarket");
-const global_1 = require("../constants/global");
 const web3_1 = __importDefault(require("web3"));
 const Knight_1 = require("../app/models/Knight");
 const SaleKnight_1 = require("../app/models/SaleKnight");
@@ -24,6 +23,7 @@ const RequestMarry_1 = require("../app/models/RequestMarry");
 const env_1 = __importDefault(require("../env"));
 const knight_json_1 = __importDefault(require("../abi/knight.json"));
 const logger_1 = __importDefault(require("../utility/logger"));
+const handle_1 = require("./handle");
 const chainId = env_1.default.CHAIN_DEFAULT;
 const providerAchemy = new web3_1.default.providers.WebsocketProvider(env_1.default.CONTRACT[chainId].WebSocketRPC);
 const web3Achemy = new web3_1.default(providerAchemy);
@@ -34,8 +34,9 @@ class JobManager {
         this.collection = callback();
     }
 }
-class JobScanKnightMarket {
+class JobScanKnightMarket extends handle_1.HandleEventsContract {
     constructor() {
+        super();
         this.jobManager = new JobManager(() => __awaiter(this, void 0, void 0, function* () {
             return yield KnightMarket_1.KnightMarketModel.findOne();
         }));
@@ -56,66 +57,85 @@ class JobScanKnightMarket {
                 const lastBlock = yield web3Achemy.eth.getBlockNumber();
                 const fromBlock = this.jobManager.collection.scanToBlock + 1;
                 this.jobManager.isRunning = true;
-                const eventsLogTransfer = yield KnightContract.getPastEvents(global_1.TYPE_EVENT.TRANSFER, {
-                    filter: {},
-                    fromBlock: fromBlock,
-                    toBlock: lastBlock,
-                });
-                const eventsLogNewKnight = yield KnightContract.getPastEvents(global_1.TYPE_EVENT.NEW_KNIGHT, {
-                    filter: {},
-                    fromBlock: fromBlock,
-                    toBlock: lastBlock,
-                });
-                const eventsLogSaleKnight = yield KnightContract.getPastEvents(global_1.TYPE_EVENT.SALE_KNIGHT, {
-                    filter: {},
-                    fromBlock: this.jobManager.collection.scanToBlock,
-                    toBlock: lastBlock,
-                });
-                const eventsLogBuyKnight = yield KnightContract.getPastEvents(global_1.TYPE_EVENT.BUY_KNIGHT, {
-                    filter: {},
-                    fromBlock: this.jobManager.collection.scanToBlock,
-                    toBlock: lastBlock,
-                });
-                const eventsLogDestroySaleKnight = yield KnightContract.getPastEvents(global_1.TYPE_EVENT.DESTROY_SALE_KNIGHT, {
-                    filter: {},
-                    fromBlock: this.jobManager.collection.scanToBlock,
-                    toBlock: lastBlock,
-                });
-                const eventsLogRequestMarry = yield KnightContract.getPastEvents(global_1.TYPE_EVENT.REQUEST_MARRY, {
-                    filter: {},
-                    fromBlock: this.jobManager.collection.scanToBlock,
-                    toBlock: lastBlock,
-                });
-                const eventsLogApprovalMarry = yield KnightContract.getPastEvents(global_1.TYPE_EVENT.APPROVAL_MARRY, {
-                    filter: {},
-                    fromBlock: this.jobManager.collection.scanToBlock,
-                    toBlock: lastBlock,
-                });
-                const eventsLogLevelUp = yield KnightContract.getPastEvents(global_1.TYPE_EVENT.LEVELUP, {
-                    filter: {},
-                    fromBlock: this.jobManager.collection.scanToBlock,
-                    toBlock: lastBlock,
-                });
-                const eventsLogTriggerCooldown = yield KnightContract.getPastEvents(global_1.TYPE_EVENT.TRIGGER_COOLDOWN, {
-                    filter: {},
-                    fromBlock: this.jobManager.collection.scanToBlock,
-                    toBlock: lastBlock,
-                });
-                const eventsLogTriggerTired = yield KnightContract.getPastEvents(global_1.TYPE_EVENT.TRIGGER_TIRED, {
-                    filter: {},
-                    fromBlock: this.jobManager.collection.scanToBlock,
-                    toBlock: lastBlock,
-                });
-                const eventsLogBattelResoult = yield KnightContract.getPastEvents(global_1.TYPE_EVENT.BATTLERESULTS, {
-                    filter: {},
-                    fromBlock: this.jobManager.collection.scanToBlock,
-                    toBlock: lastBlock,
-                });
+                const eventsLogTransfer = yield this.handleTransferLog(fromBlock, lastBlock);
+                const eventsLogNewKnight = yield this.handleNewKnightLog(fromBlock, lastBlock);
+                // const eventsLogSaleKnight = await KnightContract.getPastEvents(
+                //     TYPE_EVENT.SALE_KNIGHT,
+                //     {
+                //         filter: {},
+                //         fromBlock: this.jobManager.collection.scanToBlock,
+                //         toBlock: lastBlock,
+                //     }
+                // );
+                // const eventsLogBuyKnight = await KnightContract.getPastEvents(
+                //     TYPE_EVENT.BUY_KNIGHT,
+                //     {
+                //         filter: {},
+                //         fromBlock: this.jobManager.collection.scanToBlock,
+                //         toBlock: lastBlock,
+                //     }
+                // );
+                // const eventsLogDestroySaleKnight = await KnightContract.getPastEvents(
+                //     TYPE_EVENT.DESTROY_SALE_KNIGHT,
+                //     {
+                //         filter: {},
+                //         fromBlock: this.jobManager.collection.scanToBlock,
+                //         toBlock: lastBlock,
+                //     }
+                // );
+                // const eventsLogRequestMarry = await KnightContract.getPastEvents(
+                //     TYPE_EVENT.REQUEST_MARRY,
+                //     {
+                //         filter: {},
+                //         fromBlock: this.jobManager.collection.scanToBlock,
+                //         toBlock: lastBlock,
+                //     }
+                // );
+                // const eventsLogApprovalMarry = await KnightContract.getPastEvents(
+                //     TYPE_EVENT.APPROVAL_MARRY,
+                //     {
+                //         filter: {},
+                //         fromBlock: this.jobManager.collection.scanToBlock,
+                //         toBlock: lastBlock,
+                //     }
+                // );
+                // const eventsLogLevelUp = await KnightContract.getPastEvents(
+                //     TYPE_EVENT.LEVELUP,
+                //     {
+                //         filter: {},
+                //         fromBlock: this.jobManager.collection.scanToBlock,
+                //         toBlock: lastBlock,
+                //     }
+                // );
+                // const eventsLogTriggerCooldown = await KnightContract.getPastEvents(
+                //     TYPE_EVENT.TRIGGER_COOLDOWN,
+                //     {
+                //         filter: {},
+                //         fromBlock: this.jobManager.collection.scanToBlock,
+                //         toBlock: lastBlock,
+                //     }
+                // );
+                // const eventsLogTriggerTired = await KnightContract.getPastEvents(
+                //     TYPE_EVENT.TRIGGER_TIRED,
+                //     {
+                //         filter: {},
+                //         fromBlock: this.jobManager.collection.scanToBlock,
+                //         toBlock: lastBlock,
+                //     }
+                // );
+                // const eventsLogBattelResoult = await KnightContract.getPastEvents(
+                //     TYPE_EVENT.BATTLERESULTS,
+                //     {
+                //         filter: {},
+                //         fromBlock: this.jobManager.collection.scanToBlock,
+                //         toBlock: lastBlock,
+                //     }
+                // );
+                // await this.handleTransfer(eventsLogTransfer);
                 yield this.handleNewKnight(eventsLogNewKnight);
                 // await this.handleSaleKnight(eventsLogSaleKnight);
                 // await this.handleBuyKnight(eventsLogBuyKnight);
                 // await this.handleDestroySaleKnight(eventsLogDestroySaleKnight);
-                // await this.handleTransfer(eventsLogTransfer);
                 // await this.handleRequestMarry(eventsLogRequestMarry);
                 // await this.handleApprovalMarry(eventsLogApprovalMarry);
                 // await this.handleLevelUp(eventsLogLevelUp);
